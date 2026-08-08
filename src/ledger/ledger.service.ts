@@ -6,6 +6,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { AuthUser } from '../common/types/auth-user.type';
 import { SellersService } from '../sellers/sellers.service';
 import { CreateLedgerEntryDto } from './dto/create-ledger-entry.dto';
+import { signedLedgerAmount } from './ledger-calculations';
 import { LedgerEntry } from './schemas/ledger-entry.schema';
 
 @Injectable()
@@ -29,7 +30,7 @@ export class LedgerService {
       seller: new Types.ObjectId(seller._id.toString()),
       representative: new Types.ObjectId(user.sub),
       occurredAt: new Date(dto.occurredAt),
-      signedAmountToman: this.signed(dto.type, dto.amountToman),
+      signedAmountToman: signedLedgerAmount(dto.type, dto.amountToman),
     });
   }
 
@@ -65,8 +66,4 @@ export class LedgerService {
   }
 
   model() { return this.entries; }
-
-  private signed(type: LedgerType, amount: number) {
-    return [LedgerType.PURCHASE, LedgerType.ADJUSTMENT_CREDIT].includes(type) ? amount : -amount;
-  }
 }

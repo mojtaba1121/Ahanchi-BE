@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -13,6 +13,11 @@ export class SellersService {
   async create(dto: CreateSellerDto, user: AuthUser) {
     const createdBy = new Types.ObjectId(user.sub);
     const filter = { createdBy, clientId: dto.clientId };
+    if (!dto.phone) {
+      const existing = await this.sellers.findOne(filter).lean();
+      if (existing) return existing;
+      throw new BadRequestException('شماره موبایل فروشنده الزامی است');
+    }
     const { clientId: _clientId, ...sellerDetails } = dto;
 
     try {

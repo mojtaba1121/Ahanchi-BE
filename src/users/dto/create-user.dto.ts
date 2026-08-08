@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, Length, Matches, MinLength } from 'class-validator';
+import { IsEnum, IsString, Length, Matches, MinLength, ValidateIf } from 'class-validator';
 import { UserRole } from '../../common/enums/user-role.enum';
 
 export class CreateUserDto {
@@ -22,12 +22,14 @@ export class CreateUserDto {
   role: UserRole;
 
   @ApiPropertyOptional()
-  @IsOptional()
+  @ValidateIf((dto: CreateUserDto) => dto.role === UserRole.REPRESENTATIVE)
   @IsString()
+  @Length(2, 80, { message: 'نام شهر برای نماینده الزامی است' })
   city?: string;
 
   @ApiPropertyOptional()
-  @IsOptional()
+  @ValidateIf((dto: CreateUserDto) => dto.role === UserRole.REPRESENTATIVE)
   @IsString()
+  @Length(2, 80, { message: 'نام روستا برای نماینده الزامی است' })
   village?: string;
 }

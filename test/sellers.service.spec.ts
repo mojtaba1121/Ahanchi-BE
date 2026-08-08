@@ -19,6 +19,7 @@ const user: AuthUser = {
 const dto: CreateSellerDto = {
   clientId: 'a5d49cd0-b2e5-4827-af82-3b0fae949e0f',
   fullName: 'ممد قلی',
+  phone: '09123456789',
   city: 'تهران',
 };
 
@@ -27,6 +28,14 @@ function queryResult<T>(value: T) {
 }
 
 describe('SellersService.create', () => {
+  it('requires a mobile number for a new seller', async () => {
+    const model = { findOne: vi.fn().mockReturnValue(queryResult(null)) };
+    const service = new SellersService(model as never);
+
+    await expect(service.create({ ...dto, phone: undefined }, user))
+      .rejects.toThrow('شماره موبایل فروشنده الزامی است');
+  });
+
   it('atomically creates or returns a seller by representative and client id', async () => {
     const seller = { _id: new Types.ObjectId(), ...dto, createdBy: new Types.ObjectId(user.sub) };
     const findOneAndUpdate = vi.fn().mockReturnValue(queryResult(seller));
@@ -36,7 +45,7 @@ describe('SellersService.create', () => {
     await expect(service.create(dto, user)).resolves.toEqual(seller);
     expect(findOneAndUpdate).toHaveBeenCalledWith(
       { createdBy: new Types.ObjectId(user.sub), clientId: dto.clientId },
-      { $setOnInsert: { fullName: dto.fullName, city: dto.city } },
+      { $setOnInsert: { fullName: dto.fullName, phone: dto.phone, city: dto.city } },
       { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true },
     );
   });
