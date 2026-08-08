@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'agent/**']
   pull_request:
 
 jobs:
@@ -18,3 +18,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Validate Docker Compose
+        env:
+          JWT_SECRET: ci-only-secret-that-is-longer-than-thirty-two-characters
+          SEED_ADMIN_PHONE: '09000000000'
+          SEED_ADMIN_PASSWORD: ci-only-admin-password
+        run: docker compose config --quiet
+      - run: docker build -t ahanchi-backend:ci .
