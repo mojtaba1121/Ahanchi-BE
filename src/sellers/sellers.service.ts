@@ -54,4 +54,21 @@ export class SellersService {
     if (!seller) throw new NotFoundException('فروشنده پیدا نشد');
     return seller;
   }
+
+  async resolveForUser(id: string, clientId: string | undefined, user: AuthUser) {
+    const byIdFilter: Record<string, unknown> = { _id: id };
+    if (user.role === UserRole.REPRESENTATIVE) byIdFilter.createdBy = user.sub;
+    const byId = await this.sellers.findOne(byIdFilter).lean();
+    if (byId) return byId;
+
+    if (clientId) {
+      const byClientId = await this.sellers.findOne({
+        createdBy: new Types.ObjectId(user.sub),
+        clientId,
+      }).lean();
+      if (byClientId) return byClientId;
+    }
+
+    throw new NotFoundException('فروشنده پیدا نشد');
+  }
 }

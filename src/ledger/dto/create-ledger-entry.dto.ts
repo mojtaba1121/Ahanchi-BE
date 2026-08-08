@@ -7,6 +7,11 @@ export class CreateLedgerEntryDto {
   @IsString()
   sellerId: string;
 
+  @ApiPropertyOptional({ description: 'شناسه UUID محلی فروشنده برای بازیابی همگام‌سازی آفلاین' })
+  @IsOptional()
+  @IsUUID()
+  sellerClientId?: string;
+
   @ApiProperty({ enum: [LedgerType.PAYMENT_TO_SELLER, LedgerType.RECEIPT_FROM_SELLER, LedgerType.ADJUSTMENT_CREDIT, LedgerType.ADJUSTMENT_DEBIT] })
   @IsEnum(LedgerType)
   type: LedgerType;

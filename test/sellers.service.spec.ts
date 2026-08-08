@@ -67,3 +67,38 @@ describe('SellersService.create', () => {
     await expect(service.create(dto, user)).rejects.toBe(databaseError);
   });
 });
+
+describe('SellersService.resolveForUser', () => {
+  it('returns the seller found by its server id', async () => {
+    const seller = { _id: new Types.ObjectId(), ...dto, createdBy: new Types.ObjectId(user.sub) };
+    const model = { findOne: vi.fn().mockReturnValue(queryResult(seller)) };
+    const service = new SellersService(model as never);
+
+    await expect(service.resolveForUser(seller._id.toString(), dto.clientId, user)).resolves.toEqual(seller);
+    expect(model.findOne).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the representative-scoped client id when the server id is stale', async () => {
+    const seller = { _id: new Types.ObjectId(), ...dto, createdBy: new Types.ObjectId(user.sub) };
+    const model = {
+      findOne: vi.fn()
+        .mockReturnValueOnce(queryResult(null))
+        .mockReturnValueOnce(queryResult(seller)),
+    };
+    const service = new SellersService(model as never);
+
+    await expect(service.resolveForUser(new Types.ObjectId().toString(), dto.clientId, user)).resolves.toEqual(seller);
+    expect(model.findOne).toHaveBeenNthCalledWith(2, {
+      createdBy: new Types.ObjectId(user.sub),
+      clientId: dto.clientId,
+    });
+  });
+
+  it('rejects a seller missing by both identifiers', async () => {
+    const model = { findOne: vi.fn().mockReturnValue(queryResult(null)) };
+    const service = new SellersService(model as never);
+
+    await expect(service.resolveForUser(new Types.ObjectId().toString(), dto.clientId, user))
+      .rejects.toThrow('فروشنده پیدا نشد');
+  });
+});

@@ -6,6 +6,11 @@ export class CreatePurchaseDto {
   @IsString()
   sellerId: string;
 
+  @ApiPropertyOptional({ description: 'شناسه UUID محلی فروشنده برای بازیابی همگام‌سازی آفلاین' })
+  @IsOptional()
+  @IsUUID()
+  sellerClientId?: string;
+
   @ApiProperty()
   @IsString()
   materialId: string;
