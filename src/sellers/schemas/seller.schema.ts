@@ -9,7 +9,7 @@ export class Seller {
   @Prop({ required: true, trim: true, index: true })
   fullName: string;
 
-  @Prop({ trim: true, match: /^09\d{9}$/ })
+  @Prop({ required: true, trim: true, match: /^09\d{9}$/ })
   phone?: string;
 
   @Prop({ trim: true })

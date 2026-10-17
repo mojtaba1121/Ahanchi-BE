@@ -33,14 +33,15 @@ export class PurchasesService {
       return existing;
     }
     const [seller, material] = await Promise.all([
-      this.sellers.getForUser(dto.sellerId, user),
+      this.sellers.resolveForUser(dto.sellerId, dto.sellerClientId, user),
       this.materials.findOne({ _id: dto.materialId, isActive: true }).lean(),
     ]);
     if (!material) throw new NotFoundException('نوع ماده پیدا نشد یا غیرفعال است');
+    const sellerId = seller._id.toString();
     const totalAmountToman = calculatePurchaseTotal(dto.weightGrams, dto.pricePerKgToman);
     const purchasedAt = new Date(dto.purchasedAt);
     const purchase = await this.purchases.create({
-      seller: new Types.ObjectId(dto.sellerId),
+      seller: new Types.ObjectId(sellerId),
       material: new Types.ObjectId(dto.materialId),
       representative: new Types.ObjectId(user.sub),
       weightGrams: dto.weightGrams,
@@ -53,7 +54,7 @@ export class PurchasesService {
       village: seller.village,
     });
     await this.ledger.createPurchaseEntry({
-      sellerId: dto.sellerId,
+      sellerId,
       representativeId: user.sub,
       purchaseId: purchase.id,
       amountToman: totalAmountToman,

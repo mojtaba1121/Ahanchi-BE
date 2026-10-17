@@ -6,6 +6,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { AuthUser } from '../common/types/auth-user.type';
 import { SellersService } from '../sellers/sellers.service';
 import { CreateLedgerEntryDto } from './dto/create-ledger-entry.dto';
+import { signedLedgerAmount } from './ledger-calculations';
 import { LedgerEntry } from './schemas/ledger-entry.schema';
 
 @Injectable()
@@ -20,15 +21,16 @@ export class LedgerService {
     if (user.role === UserRole.REPRESENTATIVE && [LedgerType.ADJUSTMENT_CREDIT, LedgerType.ADJUSTMENT_DEBIT].includes(dto.type)) {
       throw new ForbiddenException('ثبت سند تعدیل فقط برای مدیر مجاز است');
     }
-    await this.sellers.getForUser(dto.sellerId, user);
+    const seller = await this.sellers.resolveForUser(dto.sellerId, dto.sellerClientId, user);
     const existing = await this.entries.findOne({ clientOperationId: dto.clientOperationId }).lean();
     if (existing) return existing;
+    const { sellerId: _sellerId, sellerClientId: _sellerClientId, ...entryDetails } = dto;
     return this.entries.create({
-      ...dto,
-      seller: new Types.ObjectId(dto.sellerId),
+      ...entryDetails,
+      seller: new Types.ObjectId(seller._id.toString()),
       representative: new Types.ObjectId(user.sub),
       occurredAt: new Date(dto.occurredAt),
-      signedAmountToman: this.signed(dto.type, dto.amountToman),
+      signedAmountToman: signedLedgerAmount(dto.type, dto.amountToman),
     });
   }
 
@@ -64,8 +66,4 @@ export class LedgerService {
   }
 
   model() { return this.entries; }
-
-  private signed(type: LedgerType, amount: number) {
-    return [LedgerType.PURCHASE, LedgerType.ADJUSTMENT_CREDIT].includes(type) ? amount : -amount;
-  }
 }
